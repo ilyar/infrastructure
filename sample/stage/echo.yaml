@@ -1,0 +1,51 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: echo
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: echo
+  namespace: echo
+  labels:
+    app: echo
+spec:
+  containers:
+    - name: echo
+      image: hashicorp/http-echo:0.2.3
+      args:
+        - "-text=foo"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: echo
+  namespace: echo
+spec:
+  selector:
+    app: echo
+  ports:
+    - port: 5678 # Default port used by the image
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: echo
+  namespace: echo
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: echo.stage.acme.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: echo
+              servicePort: 5678
+  tls:
+    - hosts:
+        - echo.stage.acme.com
+      secretName: echo-tls
